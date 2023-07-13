@@ -1,3 +1,4 @@
 *-lock.json
 config/*
 node_modules/
+generated-datasets/
