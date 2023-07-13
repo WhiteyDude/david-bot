@@ -19,7 +19,7 @@ async function fetchAllMessages() {
   let dataset = [];
   //console.dir(channel, { depth: null });
 
-  discord.guilds.cache.get(guildId).channels.cache.forEach(async (channel) => {
+  discord.guilds.cache.get(config.get('guildId')).channels.cache.forEach(async (channel) => {
     if (channel.type === 'GUILD_TEXT'){
       console.log(`Looping through ${channel.name}`)
       // Create message pointer
@@ -41,7 +41,7 @@ async function fetchAllMessages() {
               //   'isReply': (msg.type == 'REPLY') ? true : false,
               //   'replyMessageId': (msg.reference) ? msg.reference.messageId : ''
               // };
-              if (msg.author.id == davidId && msg.type == 'REPLY') {
+              if (msg.author.id == config.get('davidId') && msg.type == 'REPLY') {
                 //console.log(`Found a match (${msg.author.id} == ${davidId} and it's a ${msg.type})`)
                 let replyMessage = await channel.messages.fetch(msg.reference.messageId)
                 davidMessages.push({
@@ -94,7 +94,7 @@ async function fetchAllMessages() {
 
 // main
 async function main() {
-    discord.login(discordToken);
+    discord.login(config.get('discordToken'));
 }
 
 main()
