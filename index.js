@@ -63,7 +63,7 @@ async function fetchAllMessages() {
           .then(async (messagePage) => {
             loopCount += messagePage.size
             for (let [id, msg] of messagePage) {
-              console.log(id)
+              //console.log(id)
               //messagePage.forEach(async (msg) => {
               messages.push({
                 'timestamp': msg.createdTimestamp,
@@ -86,11 +86,11 @@ async function fetchAllMessages() {
                   if ((messages.length - davidStreakOffset) > -1) {
                     let tmpMessage = messages[messages.length-davidStreakOffset]
                     if (tmpMessage.userId == config.get('discord.davidId')) {
-                      console.log(`Match! ${msg.id} / ${tmpMessage.messageId}`);
-                      console.log(`David: ${msg.content}`)
-                      console.log(`Temp message (offset: ${messages.length} - ${davidStreakOffset}):`)
-                      console.log(`${tmpMessage.userName}: ${tmpMessage.content}`)
-                      console.log(" ")
+                      // console.log(`Match! ${msg.id} / ${tmpMessage.messageId}`);
+                      // console.log(`David: ${msg.content}`)
+                      // console.log(`Temp message (offset: ${messages.length} - ${davidStreakOffset}):`)
+                      // console.log(`${tmpMessage.userName}: ${tmpMessage.content}`)
+                      // console.log(" ")
                       //davidMessages[davidMessages.length-1].content += discordMessageParse(tmpMessage.content)
                       msg.content += `\n${discordMessageParse(tmpMessage.content)}`
                       davidStreakOffset += 1
@@ -104,7 +104,7 @@ async function fetchAllMessages() {
                     }
                   }
                 }
-                console.log(`Reply: ${msg.id}`)
+                //console.log(`Reply: ${msg.id}`)
                 davidMessages.push({
                   'timestamp': msg.createdTimestamp,
                   'messageId': msg.id,
