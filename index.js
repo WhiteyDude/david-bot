@@ -41,51 +41,93 @@ async function fetchAllMessages() {
       }
       console.log(`----- Getting messages for ${channel.name}...`)
       // Create message pointer
-      let message = await channel.messages
-      .fetch({ limit: 1 })
-      .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
+      let message
+      try {
+        message = await channel.messages
+        .fetch({ limit: 1 })
+        .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
+      }
+      catch (err) {
+        // Probably DiscordAPIError: Missing Access
+        console.error(error)
+        continue;
+      }
 
       let loopCount = 0
+      let messages = []
 
       while (message) {
+        //if (loopCount > 5000) { break } // Dev
         await channel.messages
-          .fetch({ limit: 100, before: message.id })
+          .fetch({ limit: 50, before: message.id })
           .then(async (messagePage) => {
             loopCount += messagePage.size
-            messagePage.forEach(async (msg) => {
-              // messages[messageId] = {
-              //   'timestamp': msg.createdTimestamp,
-              //   'messageId': msg.id,
-              //   'userId': msg.author.id,
-              //   'userName': msg.author.globalName,
-              //   'content': msg.content,
-              //   'isReply': (msg.type == 'REPLY') ? true : false,
-              //   'replyMessageId': (msg.reference) ? msg.reference.messageId : ''
-              // };
+            for (let [id, msg] of messagePage) {
+              console.log(id)
+              //messagePage.forEach(async (msg) => {
+              messages.push({
+                'timestamp': msg.createdTimestamp,
+                'messageId': msg.id,
+                'userId': msg.author.id,
+                'userName': msg.author.globalName,
+                'content': msg.content,
+                'isReply': (msg.type == 'REPLY') ? true : false,
+                'replyMessageId': (msg.reference) ? msg.reference.messageId : ''
+              });
+              //
+              //console.log(`${msg.author.globalName}: ${discordMessageParse(msg.content)}`)
               if (msg.author.id == config.get('discord.davidId') && msg.type == 'REPLY') {
                 //console.log(`Found a match (${msg.author.id} == ${davidId} and it's a ${msg.type})`)
                 let replyMessage = await channel.messages.fetch(msg.reference.messageId)
+                let davidStreak = true
+                let davidStreakOffset = 2
+                while (davidStreak) {
+                  // Check if the last message was from David too - if so, append it
+                  if ((messages.length - davidStreakOffset) > -1) {
+                    let tmpMessage = messages[messages.length-davidStreakOffset]
+                    if (tmpMessage.userId == config.get('discord.davidId')) {
+                      console.log(`Match! ${msg.id} / ${tmpMessage.messageId}`);
+                      console.log(`David: ${msg.content}`)
+                      console.log(`Temp message (offset: ${messages.length} - ${davidStreakOffset}):`)
+                      console.log(`${tmpMessage.userName}: ${tmpMessage.content}`)
+                      console.log(" ")
+                      //davidMessages[davidMessages.length-1].content += discordMessageParse(tmpMessage.content)
+                      msg.content += `\n${discordMessageParse(tmpMessage.content)}`
+                      davidStreakOffset += 1
+                    }
+                    else {
+                      // console.log("No match:")
+                      // console.log(`David: ${msg.content}`)
+                      // console.log(`${tmpMessage.userName}: ${discordMessageParse(tmpMessage.content)}`)
+                      // console.log(" ")
+                      davidStreak = false
+                    }
+                  }
+                }
+                console.log(`Reply: ${msg.id}`)
                 davidMessages.push({
                   'timestamp': msg.createdTimestamp,
                   'messageId': msg.id,
-                  'content': msg.content,
+                  'content': discordMessageParse(msg.content),
                   'replyMessage': {
                     'messageId': replyMessage.id,
-                    'content': replyMessage.content,
+                    'content': discordMessageParse(replyMessage.content),
                     'userName': replyMessage.author.globalName                
                   }
-                })  
+                })
               }
-            });
+              //console.log("End of async message page (per message loop)")
+            };
 
             // Update our message pointer to be the last message on the page of messages
             message = 0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
-
+            // End of page
           })
         if (message) {
           console.log(`Found ${davidMessages.length} matches in ${loopCount} messages...`)
-          let seconds = Math.floor(Math.random() * (7500 - 3700) + 3500);
-          console.log(`Waiting ${Math.floor(seconds/1000)} seconds before continuing...`)
+          // let seconds = Math.floor(Math.random() * (7500 - 3700) + 3500);
+          let seconds = Math.floor(Math.random() * (3700 - 1200) + 1200);
+          console.log(`Waiting ${(seconds/1000).toFixed(2)} seconds before continuing...`)
           await new Promise(resolve => setTimeout(resolve, seconds));
         }
         else {
@@ -112,16 +154,23 @@ async function fetchAllMessages() {
       "input": `(${msg.replyMessage.userName}) ${msg.replyMessage.content}`,
       "output": msg.content
     })
-  })
+  }
   //console.log(dataset);
   try {
     let d = new Date()
     let filename = `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2, '0')}${d.getDate()}${d.getHours().toString().padStart(2, '0')}${d.getMinutes().toString().padStart(2, '0')}${d.getSeconds().toString().padStart(2, '0')}`
-    fs.writeFileSync(`./generated-datasets/${filename}.json`, dataset);
-    console(`Wrote dataset to ./generated-datasets/${filename}.json`)
+    fs.writeFileSync(`./generated-datasets/${filename}.json`, JSON.stringify(dataset, null, 2));
+    console.log(`Wrote dataset to ./generated-datasets/${filename}.json`)
   } catch (err) {
     console.error(err);
   }
+}
+
+function discordMessageParse(content) {
+  content = content.replace(/<@!?\d+>/g, ""); // Strip mentions
+  content = content.replace(/\s\s/g, " "); // Remove double spaces
+  //content = content.replace(/\|\|/g, ""); // Replace spoiler tags
+  return content;
 }
 
 // main
