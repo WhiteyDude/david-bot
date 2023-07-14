@@ -43,27 +43,32 @@ async function fetchAllMessages() {
       // Create message pointer
       let message
       try {
+        // Bug maybe? I don't think this message is getting included in the loop, the 1 most recent?
         message = await channel.messages
         .fetch({ limit: 1 })
         .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
       }
       catch (err) {
         // Probably DiscordAPIError: Missing Access
-        console.error(error)
+        console.error(err)
         continue;
       }
 
       let loopCount = 0
       let messages = []
+      let preReplies = false
 
       while (message) {
-        //if (loopCount > 5000) { break } // Dev
-        await channel.messages
+        //if (loopCount > 130000) { break } // Some channels are too big
+        if (preReplies) { break; }
+        try {
+          await channel.messages
           .fetch({ limit: 50, before: message.id })
           .then(async (messagePage) => {
             loopCount += messagePage.size
             for (let [id, msg] of messagePage) {
-              //console.log(id)
+              // This is when they added replies to discord - https://twitter.com/discord/status/1328412825811906560
+              if (msg.createdTimestamp < Math.floor(new Date("2020-11-17").getTime())) { preReplies = true; break; }
               //messagePage.forEach(async (msg) => {
               messages.push({
                 'timestamp': msg.createdTimestamp,
@@ -123,6 +128,13 @@ async function fetchAllMessages() {
             message = 0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
             // End of page
           })
+        }
+        catch (err) {
+          let seconds = Math.floor(Math.random() * (23000 - 18900) + 18900);
+          console.log(`Got above error in HTTP request (${message.id} in ${channel.name}), we'll wait ${(seconds/1000).toFixed(2)} seconds then keep trying with the same pointer`)
+          console.error(err)
+          await new Promise(resolve => setTimeout(resolve, seconds));
+        }
         if (message) {
           console.log(`Found ${davidMessages.length} matches in ${loopCount} messages...`)
           // let seconds = Math.floor(Math.random() * (7500 - 3700) + 3500);
@@ -142,7 +154,11 @@ async function fetchAllMessages() {
     console.log("No messages found :(")
     return
   }
+<<<<<<< HEAD:index.js
   davidMessages.forEach(function(msg) { 
+=======
+  for (let msg of davidMessages) {
+>>>>>>> 8d384e7 (Renamed main file):extract.js
     // console.log(`You are David, an AI chatbot designed to copy the mannerisms of David. Your spelling and punctuation aren\'t the best and you regularly make gramatical errors (e.g. confusing their and they\'re, your and you\'re, etc). You also often break up your messages into multiple lines, even when speaking in a single sentence.
 
     // As David, you will receive messages from many people. 
