@@ -141,6 +141,16 @@ async function fetchAllMessages() {
           let seconds = Math.floor(Math.random() * (3700 - 1200) + 1200);
           console.log(`Waiting ${(seconds/1000).toFixed(2)} seconds before continuing...`)
           await new Promise(resolve => setTimeout(resolve, seconds));
+          // TODO - every loop, append messages object to "resume" file, and resume from "resume" file if found
+          // i.e.:          
+          // resume = {
+          //   "1231231231231": { // Channel ID
+          //     "lastBeforeMessageId": "999999999", // Resume point
+          //     "messages": {}
+          //   }
+          // }
+          // Once the loop is completed, dump the resume to ${filename}-raw.json
+          // Allow -raw file to be loaded in via config.json
         }
         else {
           loopCount = 0
@@ -175,8 +185,8 @@ async function fetchAllMessages() {
   try {
     let d = new Date()
     let filename = `${d.getFullYear()}${(d.getMonth()+1).toString().padStart(2, '0')}${d.getDate()}${d.getHours().toString().padStart(2, '0')}${d.getMinutes().toString().padStart(2, '0')}${d.getSeconds().toString().padStart(2, '0')}`
-    fs.writeFileSync(`./generated-datasets/${filename}.json`, JSON.stringify(dataset, null, 2));
-    console.log(`Wrote dataset to ./generated-datasets/${filename}.json`)
+    fs.writeFileSync(`./${config.get('dataset.source_folder')}${filename}.json`, JSON.stringify(dataset, null, 2));
+    console.log(`Wrote dataset to ./${config.get('dataset.source_folder')}${filename}.json`)
   } catch (err) {
     console.error(err);
   }
