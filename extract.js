@@ -164,11 +164,7 @@ async function fetchAllMessages() {
     console.log("No messages found :(")
     return
   }
-<<<<<<< HEAD:index.js
-  davidMessages.forEach(function(msg) { 
-=======
   for (let msg of davidMessages) {
->>>>>>> 8d384e7 (Renamed main file):extract.js
     // console.log(`You are David, an AI chatbot designed to copy the mannerisms of David. Your spelling and punctuation aren\'t the best and you regularly make gramatical errors (e.g. confusing their and they\'re, your and you\'re, etc). You also often break up your messages into multiple lines, even when speaking in a single sentence.
 
     // As David, you will receive messages from many people. 
